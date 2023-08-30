@@ -1,0 +1,12 @@
+Can the following be accomplished in user mode or require a system call?
+1a) reading one char from a file on disk using fgetc
+	- Depends on the location of the file?
+1b) calling a function
+	- Depends on the type of function. Given that the previous question was true, fgetc is technically 
+	both a function and a systemcall that requires elevated permissions.
+1c) struct whack *s = malloc(sizeof *s);
+	- User mode
+1d) getting current time of day
+	- User mode
+1e) double e = exp(1.0);
+	- User mode
