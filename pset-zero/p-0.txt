@@ -1,0 +1,35 @@
+1) Differences between registers, RAM, disk.
+	- Registers: store important information pertaining to the CPUs operation.
+	- RAM: store data and information about instructions, including instructions for the
+	CPU which may access the registers. Is also volatile memory, which means it is 
+	forgotten once the computer is turned off.
+	- Disk: non-volatile memory which stores data pertaining to the operating system
+	and files that are intended to be saved after turning the computer off.
+2) Five basic steps on the instruction cycle.
+	- Fetch instruction from RAM, read the registers while decoding instruction, execute
+	the decoded instruction, access data memory, write the result into a register.
+3) Register that controls next instruction.
+	- The program counter register.
+4) Three things that alter flow of execution.
+	- Jump instructions.
+	- Branch instructions.
+	- Interrupts.
+5) Important register for function calls and local variables
+	- The stack pointer.
+6) SRAM vs DRAM
+	- SRAM is used for cache, DRAM is used for data and program instructions, SRAM is generally faster.
+7) How does PC turn on if RAM is empty?
+	- Boot instructions are stored within a bootloader, generally in the form of a disk/solid state drive and exist as flash memory.
+8) CPU interactions with I/O devices.
+	- Specific locations in memory pertain to I/O devices, resulting in 
+	certain CPU instructions being able to access peripheral devices through a data bus.
+9a) -5 as signed, 32 bit int (HEX)
+	- 0xFFFFFFFB
+9b) (signed int) -3 >> 1 (HEX and decimal)
+	- Decimal: -2, HEX: 0xFFFFFFFE 
+9c) (unsigned int) 1024 | 0x03 (HEX and decimal)
+	- Decimal: 1027, HEX: 0x403
+9d) (unsigned int) 0x456 & ~0xFF (HEX and decimal)
+	- Decimal: 1024, HEX: 0x400
+9e) 'A'|32 (HEX, decimal, char)
+	- Decimal: 97, 0x61, a
