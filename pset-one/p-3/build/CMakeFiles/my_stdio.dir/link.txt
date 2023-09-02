@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmy_stdio.a CMakeFiles/my_stdio.dir/meow/my_stdio.c.o
+/usr/bin/ranlib libmy_stdio.a

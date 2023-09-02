@@ -1,22 +1,22 @@
 What happens in the following pieces of code?
-2a) n = write(1, "XYZ", 3);
+2a: n = write(1, "XYZ", 3);
 	- Due to the file descriptor of the write command being 1, the program will write
 	out as many bits designated in the MAXCOUNT section into standard output, resulting
 	in no error.
-2b) fd = open("/oopsy", O_WRONLY | O_CREAT | O_TRUNC, 0666);
+2b: fd = open("/oopsy", O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	- Open will attempt to either create or truncate to a file called oopsy within the root
 	directory. However, without elevated permissions the command can't do so.
-2c)
+2c:
 char buf[3];
 for (;;) printf("%d\n", read(fd, buf, 3));
 // fd is a file on disk open for reading; file is 10 bytes long
 	-
-2d) n = write(1, NULL, 1);
-	- Attempting to write the NULL value to standard output results in the Bad Address 
+2d: n = write(1, NULL, 1);
+	- Attempting to write the NULL value to standard output results in the Bad Address
 	error, which upon further inspection is the EFAULT error. This hints at the issue
-	with this command, which is attempting to write out the value of a void pointer 
+	with this command, which is attempting to write out the value of a void pointer
 	that points to "null" which doesn't "exist" within memory, causing a fault.
-2e) n = close(-1);
+2e: n = close(-1);
 	- The close function takes in a filedescriptor, and any value less than 0 results
-	in the EBADF error which specifies that the function did not recieve a valid 
+	in the EBADF error which specifies that the function did not recieve a valid
 	file descriptor.

@@ -1,0 +1,1 @@
+/usr/bin/cc -O2 -g -DNDEBUG CMakeFiles/meow.dir/meow/meow.c.o -o meow  libmy_stdio.a 

@@ -1,0 +1,4 @@
+/home/andy/repos/junior-fall/ece-357/pset-one/p-3/build/CMakeFiles/my_stdio.dir
+/home/andy/repos/junior-fall/ece-357/pset-one/p-3/build/CMakeFiles/meow.dir
+/home/andy/repos/junior-fall/ece-357/pset-one/p-3/build/CMakeFiles/edit_cache.dir
+/home/andy/repos/junior-fall/ece-357/pset-one/p-3/build/CMakeFiles/rebuild_cache.dir
