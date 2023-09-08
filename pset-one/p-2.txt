@@ -10,7 +10,8 @@ What happens in the following pieces of code?
 char buf[3];
 for (;;) printf("%d\n", read(fd, buf, 3));
 // fd is a file on disk open for reading; file is 10 bytes long
-	-
+	- Will read the 3 bytes of the file per iteration of the loop until the offset of the read 
+	is past the end of the file where no bytes will be read and 0 will be printed.
 2d: n = write(1, NULL, 1);
 	- Attempting to write the NULL value to standard output results in the Bad Address
 	error, which upon further inspection is the EFAULT error. This hints at the issue

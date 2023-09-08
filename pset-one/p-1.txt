@@ -3,7 +3,8 @@ Can the following be accomplished in user mode or require a system call?
 	- Would use the read system call as well as the open system call to open the file.
 1b: calling a function
 	- Depends on the type of function. Given that the previous question was true, fgetc is technically
-	both a function and a systemcall that requires elevated permissions.
+	both a function which results in systemcall that requires elevated permissions. Seeing as to how 
+	functions can incorporate other functions, systemcalls are considered to be functions in c.
 1c: struct whack *s = malloc(sizeof *s);
 	- Requires a system call because it will use sbrk or mmap.
 1d: getting current time of day
