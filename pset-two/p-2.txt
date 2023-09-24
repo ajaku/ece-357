@@ -1,0 +1,87 @@
+2A Why do we care about "cylinder groups" vs. simple layouts, especially
+for a mechanical hard disk vs an SSD.
+
+- Cylinder group organization attempts to target the issue of
+  fragmentation within a storage device. Rather than storing parts of
+  the filesystem in random locations within memory, cylinder grouping
+  places the inode, free map, and data blocks close to each other since
+  they are most likely to be accessed consequitevly. By placing them
+  close to each other, read times can be substantially reduced for a
+  harddrive because a harddrive must physically move in order to read a
+  segment of memory if it is further apart. In contrast, an SSD is
+  extremely fast at random memory reading, making the impact of cylinder
+  grouping unconsequential in it's performance.
+
+2B Install 4TB SATA disk to store 4k vids, each vid 2^30 bytes.
+Approximately 4000+ vidoes would fit on disk, however, this did not end
+up being the case. Give at least 2 reasons why this might be the case.
+
+- Reason #1: As explained in the lecture notes, most systems enforce a
+  10% reserve factor that prevents the disk from getting too full and
+  allowing space for processes to run. This ensures that the computer
+  does not slow down substantially and suffer due to fragmentation and
+  low space. Therefore, at least 400GB of the disk will be put aside.
+  With each video being 2^30 bytes, or roughly 1GB, 400 of the vidoes
+  wouldn't fit on the disk.
+
+- Reason #2: The operating system performs multiple operations to ensure
+  the security of files, particularly in the case of recovering files.
+  To dos, the file system will make multiple replicas of a volume that
+  will allow it to recover the volume should something go wrong within
+  the volume. (Need to look into the reason for this a bit more).
+
+- Reason #3: Depending on the file system being used, the clusters of
+  files (groupings of bytes that can be stored within a single data
+  block) is variable. Certain file types are optimized for larger files,
+  meanwhile others are intended for multiple small files. There could be
+  a situation where a substantial amount of memory is being wasted as
+  empty space within the data block because the file system is not
+  optimally fitting the bytes within the the data blocks because each
+  data block must have a fixed amount of data. 
+
+2C echo "HELLO" >file123 # 3PM, Setp 26, 2023 touch -m -t 09131515.15
+file123 # 3:30PM
+
+What are the values of atime, mtime, and ctime and why? File system i
+snot mounted with unusual options such as relatime.
+
+atime - time of last read operation.
+
+mtime - last time a write operation was performed to the contents of the
+file or directory.
+
+ctime - inode metadata change time, gets touched whenever one of the
+metadata are modified deliberately via sys. call such as utime, chmod,
+chown, chgrp, truncate, link, unlink.
+
+Following the operations: atime = 15:10:00 mtime = 15:15:00 ctime =
+15:30:00
+
+
+atime will store the timestamp of the last read operation, in this case
+at 3:10pm on 9/26 because the cat command reads the content of the file.
+
+mtime would normally save the timestamp of the previous write operation,
+but the flags of touch flag were -t and -m. The -m flag specifies that
+only the modifcation time should be altered, while the -t flag allows
+the user to input their own modifcation time, in this case 09/13/2023 at
+15:15:00 (3:15pm). 
+
+ctime would store the timestap of the last time the inode metadata had
+been changed, in this case, the meta data had last been changed when the
+touch command was performed because it altered the modifcation time of
+the file, thus it will store the value of 3:30pm on 9/26.
+
+2D mv /A/B/F1 /A/C/F2 # (F1 is large file) and that happens quickly mv
+/A/C/F2 /A/Z/F3 # ends up taking a long time to run
+
+
+- Moving F1 might happen quicker than moving F2 because there is a
+  chance F1 could have already been involved within an operation which
+  placed it within cache. For instance, if F1 had just been copied into
+  the directory and a caching optimization had taken place, re-using it
+  with a move operation would result in a very fast operation since
+  cache memory is substantially faster. In contrast, the newly moved F2
+  is no longer within memory (has been altered into a "different" file)
+  and thus moving it again would be a slow process as it wouldn't
+  already exist within cache.
