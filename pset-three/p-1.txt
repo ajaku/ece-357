@@ -1,0 +1,16 @@
+1.1: Full Pathname of Binary (which child of pid 123 execs) is /bin/sh
+
+1.2: argc = 3, argv = ["f2.c", "f3.c", "f4.c"]
+
+1.3: Assuming the fork properly ran, the child process would get destoryed, and the
+parent process would be return back from its PPID state to PID state, waiting for
+the next command to come in.
+
+1.4 To report the exit status of the child, the parent utilizes a systemcall called 
+wait(&status) which updates status to provide information about the life of a child.
+The value of the status can be expanded by using macros descirbed within the 
+man pages for wait. WIFEEXITED(status) followed by WIFEEXISTATUS(status) (if previous
+was true) would tell us the exit status of the child. The last 8 bits would be 0 if 
+exited normally and a seperate signal if not. In this case, since foobar does not 
+exist within the location specified for the command to be ran, the status would be 
+non-zero.
