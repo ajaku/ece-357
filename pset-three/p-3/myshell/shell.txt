@@ -1,0 +1,17 @@
+How the shell works:
+Two modes: ./shell input_script # Runs commands within script (1)
+           ./shell # Takes user input (2)
+
+- Ignore # signs (comments)
+- Tokenize input (take note of seperating redirection tokens)
+- Fork to create the process
+	Child:
+	- Establish I/O redirection.
+	- exec the command
+	Parent:
+	- Call a version of wait and wait for child to complete
+	- Report information about command that was completed
+	- Keep track of exit status
+	- Report errors between steps but don't quit. Only quit at the EOF token.
+
+

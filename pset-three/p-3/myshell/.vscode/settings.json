@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stat.h": "c",
+        "_mingw_stat64.h": "c",
+        "types.h": "c",
+        "crtdefs.h": "c"
+    }
+}
