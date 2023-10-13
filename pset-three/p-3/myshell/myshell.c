@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <string.h> // strerr
 #include <unistd.h> // fork
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -12,7 +14,8 @@ extern char **environ;
 char cwd[MAX_READ];
 
 typedef struct parsed_s {
-    char *o_stdin, *oct_stdout, *oct_stderr, *oca_stdout, *oca_stderr;
+    char *redirections[5];
+    //o_stdin, *oct_stdout, *oct_stderr, *oca_stdout, *oca_stderr;
     int args_idx;
     char *args[MAX_READ]; 
 } parsed_t;
@@ -85,7 +88,7 @@ int parse_input(char *input, parsed_t *params) {
             char test_stderr[3] = "2>>";
             if (!strncmp(test_stderr, token, 3)) { 
                 redirect = 1;
-                params->oca_stderr = my_dupe(token, 3);
+                params->redirections[4] = my_dupe(token, 3);
                 //printf("2>> redirection: %s\n", params->oca_stderr);
             }
         } 
@@ -96,13 +99,13 @@ int parse_input(char *input, parsed_t *params) {
 
             if (!strncmp(test_stderr, token, 2)) { 
                 redirect = 1;
-                params->oct_stderr = my_dupe(token, 2);
+                params->redirections[2] = my_dupe(token, 2);
                 //printf("2> redirection: %s\n", params->oct_stderr);
             }
 
             if (!strncmp(test_stdout, token, 2)) { 
                 redirect = 1;
-                params->oca_stdout = my_dupe(token, 2);
+                params->redirections[3] = my_dupe(token, 2);
                 //printf(">> redirection: %s\n", params->oca_stdout);
             }
         } 
@@ -113,13 +116,13 @@ int parse_input(char *input, parsed_t *params) {
 
             if (!strncmp(token, test_stdin, 1)) {
                 redirect = 1;
-                params->o_stdin = my_dupe(token, 1);
+                params->redirections[0] = my_dupe(token, 1);
                 //printf("< redirection: %s\n", params->o_stdin);
             }
 
             if (!strncmp(token, test_stdout, 1)) {
                 redirect = 1;
-                params->oct_stdout = my_dupe(token, 1);
+                params->redirections[1] = my_dupe(token, 1);
                 //printf("> redirection: %s\n", params->oct_stdout);
             }
 
@@ -137,8 +140,45 @@ int parse_input(char *input, parsed_t *params) {
     return 0;
 }
 
-// Helped by: https://www.csl.mtu.edu/cs4411.ck/www/NOTES/process/fork/exec.html
-void exec_cmd(char **argv) {
+// Partly Inspired by: https://stackoverflow.com/questions/52939356/redirecting-i-o-in-a-custom-shell-program-written-in-c
+void handle_redir(parsed_t *flags) {
+    // o_stdin, *oct_stdout, *oct_stderr, *oca_stdout, *oca_stderr;
+    // 0         1            2            3            4
+    for (int i = 0; i < 5; i++) {
+        if(flags->redirections[i] != NULL) {
+            // open stdin
+            int fd;
+            if (!i) {
+                if ((fd = open(flags->redirections[i], O_RDONLY, 0644 )) < 0) {
+                    fprintf(stderr, "Error opening %s - %s\n", flags->redirections[i], strerror(errno));
+                }
+                dup2(fd, STDIN_FILENO);
+            }
+
+            if ((i == 1) || i == 2) {
+                if ((fd = open(flags->redirections[i], (O_WRONLY | O_CREAT | O_TRUNC), 0664)) < 0) {
+                    fprintf(stderr, "Error opening %s - %s\n", flags->redirections[i], strerror(errno));
+                }
+                if (i == 1) {
+                    dup2(fd, STDOUT_FILENO);
+                } else { dup2(fd, STDERR_FILENO); }
+            }
+
+            if ((i == 3) || (i == 4)) {
+                if ((fd = open(flags->redirections[i], (O_WRONLY | O_CREAT | O_APPEND), 0664)) < 0) {
+                    fprintf(stderr, "Error opening %s - %s\n", flags->redirections[i], strerror(errno));
+                }
+                if (i == 3) {
+                    dup2(fd, STDOUT_FILENO);
+                } else { dup2(fd, STDERR_FILENO); }
+            }
+
+            close(fd);
+        }
+    }
+}
+// Partly inspired by: https://www.csl.mtu.edu/cs4411.ck/www/NOTES/process/fork/exec.html
+void exec_cmd(char **argv, parsed_t *flags) {
     pid_t pid;
     int   status;
 
@@ -147,8 +187,7 @@ void exec_cmd(char **argv) {
             fprintf(stderr, "Fork failed!\n"); exit(1);
             break;
         case 0:
-            //printf("In child\n");
-            // Handle errors here
+            handle_redir(flags);
             if (execvp(argv[0], argv) < 0) {
                 fprintf(stderr, "Exec failed with argument %s - %s\n", argv[0], strerror(errno));
                 exit(1);
@@ -161,6 +200,7 @@ void exec_cmd(char **argv) {
             }
             //printf("Child exit status was: %d\n", WEXITSTATUS(status));
             break;
+        printf("Exit status was: %d\n", WEXITSTATUS(status));
     }
 }
 
@@ -194,11 +234,10 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "Failed to read line from %s - %s\n", input, strerror(errno));
         }
     
-        parsed_t my_params = { .o_stdin = NULL, .oct_stdout = NULL, .oct_stderr = NULL, .oca_stdout = NULL, .oca_stderr = NULL, .args_idx = 0 };
+        parsed_t my_params = { .args_idx = 0 };
 
         if (parse_input(input, &my_params)) { fprintf(stderr, "Error parsing %s, skipping.\n", input); my_params.args[0] = NULL; }
 
-        printf("Arg: %s\n", my_params.args[0]);
         my_params.args[my_params.args_idx+1] = NULL;
         if (!(my_params.args[0])) {
             continue;
@@ -209,7 +248,6 @@ int main(int argc, char* argv[]) {
             my_cd(my_params.args[1]);
         } else if (!(strcmp(my_params.args[0], "exit"))) {
             exit(1);
-        } else { exec_cmd(my_params.args); }
-
+        } else { exec_cmd(my_params.args, &my_params); }
    }
 }
