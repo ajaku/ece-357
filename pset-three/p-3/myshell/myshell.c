@@ -5,18 +5,60 @@
 
 #define MAX_READ 4096
 
+// Gets size of char * passed
+int get_size(char *str) {
+    int elements = 0;
+    int i = 0;
+    while (*(str+i)) {
+        elements++;
+        i++;
+    }
+    return i;
+}
+
+int str_comp(char *str_1, char *str_2, int j) {
+    int match = 1;
+    for (int i = 0; i < j; i++) {
+        if (!(*(str_1+ i) == *(str_2 + i))) {
+            match = 0;
+        }
+    }
+    return match;
+}
+
+// Create substring
+// Remember to free afterwards 
+char *my_dupe(char *str, int start) {
+    if (start == 0) {
+        return strdup(str);
+    }
+    
+    if (start < 0) { return NULL; }
+
+    int size = get_size(str);
+    int my_size = size - start;
+    char *my_str = (char *)malloc(my_size*sizeof(char));
+
+    for (int i = start; i < size; i++) {
+        *(my_str + i - start) = *(str + i);
+    }
+
+    return my_str;
+}
+
+
 int main(int argc, char* argv[]) {
     errno = 0;
     if (argc > 2) { fprintf(stderr, "Too many inputs\n"); return -1; }
-    FILE *script;
-    int r_script;
+    FILE *script = NULL;
+    //int r_script;
     if (argc == 2) {
         printf("Shell: %s\nScript: %s\n", argv[0], argv[1]);
         if(!(script = fopen(argv[1], "r"))) {
             fprintf(stderr, "Error opening input script %s - %s\n", argv[1], strerror(errno));
             return -1;
         }
-        r_script = 1;
+        //r_script = 1;
     }
 
     while(1) {
@@ -27,107 +69,84 @@ int main(int argc, char* argv[]) {
             fprintf(stderr, "Unable to allocate buffer\n");
             exit(1);
         }
-        if (r_script) {
-            line = getline(&input, &input_size, script);
-        } else {
-            line = getline(&input, &input_size, stdin);
-        }
+        line = getline(&input, &input_size, stdin);
         if (line <= 0) {
             // Skip clause
             // Define what to do if we skip
             fprintf(stderr, "Failed to read line from %s - %s\n", input, strerror(errno));
         }
         printf("Line: %s\n", input);
-    }
-}
-
-/*
-int main(int argc, char* argv[]) {
-    errno = 0;
-    // Invalid input
-    if (argc > 2) { fprintf(stderr, "Too many inputs\n"); return -1; }
-    // Script input
-    int read_script = 0;
-    FILE *script;
-    if (argc == 2) {
-        printf("Shell: %s\nScript: %s\n", argv[0], argv[1]);
-        if(!(script = fopen(argv[1], "r"))) {
-            fprintf(stderr, "Error opening input script %s - %s\n", argv[1], strerror(errno));
-            return -1;
-        }
-        read_script = 1;
-    }
-
-    int end_read = 0;
-    while (!end_read) {
-        char rb[MAX_READ] = "";
-        // Have not addressed possible partial reads/commands being larger than max
-        if (!read_script) {
-            if (!fgets(rb, MAX_READ, stdin)) {
-                return -1;
-            }
-        } else {
-            if (!fgets(rb, MAX_READ, script)) {
-                return -1;
-            }
-        }
-
-        // Source: https://stackoverflow.com/questions/2693776/removing-trailing-newline-character-from-fgets-input
-        char *pos;
-        if ((pos=strchr(rb, '\n')) != NULL)
-        *pos = '\0';
-        else
-        printf("error\n");
-        input too long for buffer, flag error 
-        
-        // Parse each line and populate array with items
+    
         char *token;
-        if (!(token = strtok(rb, "  "))) {
-            fprintf(stderr, "Error tokenizing input %s - %s\n", rb, strerror(errno));
+        if (!(token = strtok(input, " "))) {
+            fprintf(stderr, "Error tokenizing input %s - %s\n", input, strerror(errno));
             return -1;
         }
+
+        // Represent potential tokens from each input
+        char *command, *o_stdin, *oct_stdout, *oct_stderr, *oca_stdout, *oca_stderr = NULL;
+        char **args = NULL;
         printf("Token: %s\n", token);
-        while ((token = strtok(NULL, " ")) != NULL) {
+        command = my_dupe(token, 0);
+        while ((token = strtok(NULL, " \n")) != NULL) {
+            int parsed = 0;
             printf("Token: %s\n", token);
-            int elements = 0;
-            int i = 0;
-            while (*(token+i)) {
-                elements++;
-                i++;
-            }
-
-            // To create tokens
-
+            int elements = strlen(token);
             
-            if (((*(token) == '-') && (*(token+1) == '-')) && (elements >= 2)) {
-                flags[f_idx]= (char*)malloc((elements-2)*sizeof(char));
-                strncpy(flags[f_idx], (token+2), elements-2);
-                f_idx++;
-            } else if (*(token) == '-'){
-                flags[f_idx]= (char*)malloc((elements-1)*sizeof(char));
-                strncpy(flags[f_idx], (token+1), elements-1);
-                f_idx++;
+            // Check for 2>>
+            if ((elements >= 3) && (!parsed)) {
+                char test_stderr[3] = "2>>";
+
+                if (strncmp(test_stderr, token, 3)) { 
+                    parsed = 1;
+                    oca_stderr = my_dupe(token, 3);
+                    printf("2>> redirection: %s\n", oca_stderr);
+                }
             } 
 
-            if (*(token) == '<') {
-                [f_idx]= (char*)malloc((elements-2)*sizeof(char));
-                strncpy(flags[f_idx], (token+2), elements-2);
-                f_idx++;
+            if ((elements >= 2) && (!parsed)) {
+                char test_stdout[2] = ">>";
+                char test_stderr[2] = "2>";
+                char test_args[2] = "--";
+
+                if (strncmp(test_stderr, token, 2)) { 
+                    parsed = 1;
+                    oct_stderr = my_dupe(token, 2);
+                    printf("2> redirection: %s\n", oct_stderr);
+                }
+
+                if (strncmp(test_stdout, token, 2)) { 
+                    parsed = 1;
+                    oct_stdout = my_dupe(token, 2);
+                    printf(">> redirection: %s\n", oct_stdout);
+                }
+
+                if (strncmp(test_args, token, 2)) {
+                    parsed = 1;
+                    // What do I do with args!
+                    oct_stdout = my_dupe(token, 2);
+                    printf(">> redirection: %s\n", oct_stdout);
+                }
             } 
 
-            if (((*(token) == '>') && (*(token+1) == '>')) && (elements >= 2)) {
-                printf(">> redirection\n");
-            } else if (*(token) == '>') {
-                printf("> redirection\n");
-            } 
+             if ((elements >= 1) && (!parsed)) {
+                char *test_stdout = ">";
+                char *test_stdin = "<";
 
-            if (((*(token) == '2') && (*(token+1) == '>') && (*(token+2) == '>')) && (elements >= 3)) {
-                printf("2>> redirection\n");
-            } else if (((*(token) == '2') && (*(token+1) == '>')) && (elements >= 2)) {
-                printf("2> redirection\n");
-            } 
+                if (str_comp(token, test_stdin, 1)) {
+                    parsed = 1;
+                    o_stdin = my_dupe(token, 1);
+                    printf("< redirection: %s\n", o_stdin);
+                }
+
+                if (str_comp(token, test_stdout, 1)) {
+                    parsed = 1;
+                    oct_stdout = my_dupe(token, 1);
+                    printf("> redirection: %s\n", oct_stdout);
+                }
+            }
         }
+        // Get the correct size of each token, now parse substrings
+        printf("\n");
     }
-    return 0;
 }
-*/
