@@ -1,0 +1,25 @@
+UNIX: Linux on Ubuntu based WSL x86, Kernel version is ??
+
+1a) When you press Control-Backslash terminal quits and generates a core dump.
+The signal is called SIGQUIT, and it sends it to the process that is currently
+running and quits it, generating a core dump containing relevant memory sections,
+and registers which when combined with GDB can reconstruct the call stack. 
+// Sources: 
+// https://www.ibm.com/support/pages/trapping-ctrl-c-and-ctrl-z-unix-ksh-what-are-control-key-signals#:~:text=When%20you%20type%20CTRL%2DC,of%20%5BCTRL%2DC%5D.
+
+1b) To rebind CTRL + C (default for SIGINT) on Ubuntu, it is possible to utilize
+the stty command. By typing stty -a, you can see current settings. You edit
+SIGINT, you type stty -intr [character combination], in this case stty -intr ^U
+(Screenshot attached)
+
+1c) The code prints out:
+Having a nice day, so far
+Got a signal 11
+Where signal 11 pertains to a segmentation fault (SIGSEGV)
+What is happening here is that a SIGSEV fault is sent when attempting to 
+dereference a pointer that does not exist yet, causing the signal handler
+to be called. When that happens, the handler function is called, yet within
+the handler another segmentation fault occurs for attempting to perform a 
+similar operation. Thus, the handler won't return back to the main function 
+because it encountered an error while executing. Should the segmentation fault
+not occur within the handler we would instead get stuck within an infinite loop.
