@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include <errno.h>
 
+// Remember to close FDs and free memory!
+
 int main(int argc, char* argv[]) {
     errno = 0;
 
@@ -48,15 +50,36 @@ int main(int argc, char* argv[]) {
         dict_size++;
     }
 
+    if ( fclose(in_file) != 0) {
+        perror("Failed to close file");
+        return 1;
+    };
+
     // Done placing items into dict, now check stdin for matches
     nread = 0;
     len = 0;
     line = NULL;
 
     // It is implicitly assumed that no input would be larger than 4096 characters
+    int matches;
     while ((nread = getline(&line, &len, stdin)) != -1) {
-        for (int i = 0; i < dict_size; i++) {
+        // Psuedo Binary Search
+        int mid_point = dict_size/2;
+        int low = 0;
+        int high = dict_size;
+        dict[mid_point][0] = toupper((unsigned char) dict[mid_point][0]);
+        line[0] = toupper((unsigned char) line[0]);
+        if (dict[mid_point][0] < line[0]) {
+            low = mid_point;
+        } else if (dict[mid_point][0] > line[0]) {
+            high = mid_point;
+        } else {
+            low = 0;
+            high = dict_size;
+        }
+        for (int i = low; i < high; i++) {
             // Loop through dictionary string and make upper
+            // To make the loop a bit faster, removed every word larger than 7 elements (value of NC is for wordgen)
             // Credit: https://stackoverflow.com/questions/35181913/converting-char-to-uppercase-in-c 
             char *s = dict[i];
             while (*s) {
@@ -64,10 +87,12 @@ int main(int argc, char* argv[]) {
                 s++;
             }
             if (!strcmp(line, dict[i])) {
+                matches++;
                 fprintf(stdout, "%s", line);
             }
         }
     }
+    fprintf(stderr, "Matched %d words\n", matches);
 
     return 0;
 }
