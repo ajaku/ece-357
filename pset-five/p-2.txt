@@ -1,0 +1,84 @@
+2A.
+The scheme within the lecture notes which utilizes the accessed bit to determine
+which page frames are "hot" (have been used recently) and which are "cold" closely 
+immitates the behavior of a true LRU but does not perfectly achieve it.
+
+For a perfect LRU behavior a hardware based clock to update access times would be 
+necessary, a feature with the PFRA doesn't have available to it. Instead, the PFRA
+algorithim cleverly makes use of the access bit to determine which pages have been
+inactive the longest. The PFRA keeps track of two bits, the accessed bit and its
+previous value. Each time a PTE is accessed the accessed bit should flip, the PFRA will
+only move a PTE to the inactive region if both the accessed and previously remembered 
+accessed bits are both zero, as that shows that the page hasn't been used in two passes.
+
+2B.
+The radix-64 tree of the address_space is responsible for storing pointers to unique page-
+frames. The point of the tree is to provide a fast way to find page-frames while
+only entering page-frame's into memory once. This leads to the idea of faulting, as a minor
+fault would occur when a page-frame already exists within the radix-64 tree and a to resolve
+the problem instead of creating a new page-frame, the PTE would simply point to the page 
+frame already contained within the radix-tree. Meanwhile, a major page fault would occur if
+the page-frame does not already exist within the radix-64 tree and must be created and pointed
+to.
+
+2C.
+Page Fault Handler: Since a.out has not been accessed yet, it won't have any page-frame 
+associated with it. Thus attempting to access the data within it causes a page fault.
+Signal: No signal.
+Major or Minor Fault: In this case, it would be a major page fault because a new page-frame
+needs to be created and pointed to within the radix-64 tree.
+
+2D.
+Page Fault Handler: The BSS region has the flags PROT_READ and PROT_WRITE, meaning
+it is permissable to read and write into this region. Each time you attempt to read/write
+from the region however, a page fault occurs.
+Signal: No signal.
+Major or Minor: This results in a minor fault, attempting to read or write from the region
+is only a minor fault because a page-frame for the region already exists from when it 
+was initialized.
+
+2E.
+Page Fault Handler: In this case, once forking the copy-on-write principle must be followed.
+Until the moment where the child process attempts to write to the global variable, the parent
+and child share the same PTEs. Once the child writes, a page fault occurs which then allocates
+a new frame that gives the child write permissions.
+Signal: No signal.
+Major or Minor: This would be a major fault as a new page-frame must be created for the child
+processes, it will not refer to the same one as the parent processes.
+
+2F.
+Page Fault Handler: Attempting to read from the region will result in a page fault.
+The mapping originially had a size of 16384 bytes, after truncating the size becomes
+zero bytes. However, it is still valid to read content outside of the file size, as they will
+just be zero, it would only be unpermissable to read any content beyond the page size. As the 
+page size is 4k, reading the 4096th byte will be allowed.
+Signal: No signal.
+Major or Minor: As the page-frame has already been created, this will result in a minor fault
+where the PTE simply gets pointed to the existing page-frame.
+
+2G.
+Page Fault Handler:
+Signal:
+Major or Minor:
+
+2H.
+Page Fault Handler: The program will cause a page fault to allocate the program.
+Signal: The interesting problem here is that a segmentation fault (SIGSEGV) occurs when 
+attempting to write into char *p (*p = 41). The reason a seg fault occurs is due to where 
+functions are stored. In this program, p will store the address of the main() function.
+When it attempts to write a seperate value into that address the fault occurs. The instruction
+for the function itself is stored within the text region of the process, which has the protections
+PROT_READ and PROT_EXEC, but not PROD_WRITE, which makes sense as you would not like to alter
+the behavior instructions of the program as it is being ran. Therefore, it is not accepatable 
+to write a different address to a location in memory which is contained within the text region.
+Major or Minor: Unresolved.
+
+2I.
+Page Fault Handler: Because we have written and read from the BSS it is a dirty page. Furthermore,
+the BSS region is created with the MAP_ANONYMOUS flag, thus when the PFRA decides to "temporarily" 
+discard the page, it must also keep track of what was contained within the page and has to save it
+within a specific region (outside of the page-frame) that is called the swap space. The page-frame
+associated with the previous BSS region is now freed, thus to recover it, a page fault is needed.
+Signal: No signal.
+Major or Minor: This page fault will be a major one, a new page-frame must be made to store
+the contents which were previously copied into the swap space and discarded from the page-frame.
