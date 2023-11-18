@@ -1,0 +1,12 @@
+				Problem 2 -- Thoughts about Memory
+2A) One way to think about page frame reclamation / paging-out is that physical memory is a scarce, faster resource
+which caches virtual memory. As with any cache where cache capacity is scarce, we’d want the items that are in the
+cache to be the ones that are most likely to be used again soon. Conversely, we’d want to evict items from the cache
+based on a Least Recently Used (LRU) policy.
+
+Question to ponder: Does the scheme described in the lecture notes, with the use of the hardware PTE "A" bits and
+the PFRA algorithm, achieve true LRU behavior? If not, does it come close and how?
+
+2B) In your own words, what does the radix-64 tree of the address_space data structure do? Under what
+circumstances is this data structure used during paging-in operations? Give an example of a situation where
+consultation of that data structure allows the kernel to resolveapage fault as a minor vs a major page fault.

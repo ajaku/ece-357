@@ -1,0 +1,1 @@
+smear.o: smear.c
