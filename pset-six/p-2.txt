@@ -1,0 +1,7 @@
+2a) Examples of what can go wrong
+
+
+2b) Modify for safe "STU" code
+
+
+2c) Modify for safe "MTU" code

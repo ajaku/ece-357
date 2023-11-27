@@ -1,0 +1,32 @@
+1a) User-level, single-threaded, single CPU
+This is valid. Disabling interrupts will ensure that the program will not be interrupted
+with an *avoidable* signal, thus preventing the signal handler from potentially 
+overwriting critical areas in memory in parallel with the original process. Furthermore,
+since this program has only a single thread and a single CPU, no external programs
+will interfere with the critical memory.
+
+1b) User-level, multi-threaded, single CPU
+Blocking signals and interrupts (ASK ABOUT DIFFERENCE BETWEEN THEM) won't be 
+effective. Although we avoid the problem of a signal handler within the original
+process (1a), multiple independent can share a memory region where values can be
+overwritten even though interrupts and signals are being blocked because those
+values don't necessarily need to be altered within the handler.
+
+1c) User-level, multi-threaded, multi-CPU
+Same reasoning as above, additionally though, disabling interrupts will only affect
+the processor which is responsible for the current program, it will not prevent
+interrupts on other processors, meaning that values can still be modified through 
+interrupts on a separate processor than the one that currently is being blocked,
+as well as all the reasons detailed in (1b).
+
+1d) kernel-level, single CPU
+Slight confusion. This should work. But how does the kernel work wrt to shared
+memory regions. The Kernel can be thought of as a "giant multi-threaded program"
+according to prof., so then the ideas in 1b) should make this a non-effective 
+strategy. But, lecture notes clearly state that masking all interrupts effectively
+creates the critical region for a single core kernel.
+
+1e) kernel-level, multi-CPU
+Similar reasoning as (1c). Masking interrupts works only on the "local" core, not
+the other ones that could be running. These separate processors could end up
+reading/writing invalid data due to what is occurring within the critical region.
