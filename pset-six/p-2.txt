@@ -20,6 +20,7 @@ For "STU" only need to block signals and interrupts
 void ll_insert(struct ll *ll,struct ll_elem *insert_after, struct ll_elem *new_elem)
 {
 	sigset_t oldmask, newmask;
+	sigfillset(&newmask);
 	if (!insert_after)
 	{
 		sigprocmask(SIG_BLOCK, &newmask, &oldmask);
@@ -59,18 +60,18 @@ void ll_insert(struct ll *ll,struct ll_elem *insert_after, struct ll_elem *new_e
 	static int spin_lock = 0;
 	if (!insert_after)
 	{
-		while (TAS(&spin_lock)!=0) {
-			new_elem->fwd=ll->head; // now atomic
-			ll->head=new_elem; 	// now atomic
-			spin_lock = 0;
-		}
+		while (TAS(&spin_lock)!=0) 
+			;
+		new_elem->fwd=ll->head; // now atomic
+		ll->head=new_elem; 	// now atomic
+		spin_lock = 0;
 	}
 	else
 	{
-		while (TAS(&spin_lock)!=0) {
-			new_elem->fwd = insert_after->fwd; // now atomic
-			insert_after->fwd = new_elem;      // now atomic
-			spin_lock = 0;
-		}
+		while (TAS(&spin_lock)!=0)
+			;
+		new_elem->fwd = insert_after->fwd; // now atomic
+		insert_after->fwd = new_elem;      // now atomic
+		spin_lock = 0;
 	}
 }
