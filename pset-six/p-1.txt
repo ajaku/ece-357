@@ -20,11 +20,13 @@ interrupts on a separate processor than the one that currently is being blocked,
 as well as all the reasons detailed in (1b).
 
 1d) kernel-level, single CPU
-Slight confusion. This should work. But how does the kernel work wrt to shared
-memory regions. The Kernel can be thought of as a "giant multi-threaded program"
-according to prof., so then the ideas in 1b) should make this a non-effective 
-strategy. But, lecture notes clearly state that masking all interrupts effectively
-creates the critical region for a single core kernel.
+Similar reasoning to (1a). Masking all interrupts effectively creates the critical
+region for a single core kernel as it prevents any interrupts/signals from potentially
+overwritting/reading incorrect information. One counter argument would be that the 
+kernel can be thought of as a "giant multi-threaded program", however, in this context
+that won't be an impact because the kernel itself is in control of these processes
+and will not be able to concurrently run multiple tasks at once, even though it may
+give the impression of doing so.
 
 1e) kernel-level, multi-CPU
 Similar reasoning as (1c). Masking interrupts works only on the "local" core, not
