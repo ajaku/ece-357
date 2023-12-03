@@ -1,7 +1,72 @@
 2a) Examples of what can go wrong
+Multiple threads share the same memory space. As a result, attempting to perform
+an insert operation while multiple threads are running concurrently is a risky 
+operation and quite a few thins can go wrong:
+
+Two separate threads can attempt to enter a node as a head, only getting halfway
+through the process before another thread attempts to enter that same node at
+the tail of the list, breaking the flow of the linked list entirely.
+
+One thread may attempt to change the head node while another thread was already in
+the process of trying to do so at the same time, because the operations are not
+atomic, the resulting node at the head would not be deterministic.
+
+Similarly, two different nodes may attempt to be attached to the same node, resulting in a pointer mismatch within the linked list.
 
 
 2b) Modify for safe "STU" code
+For "STU" only need to block signals and interrupts
 
+void ll_insert(struct ll *ll,struct ll_elem *insert_after, struct ll_elem *new_elem)
+{
+	sigset_t oldmask, newmask;
+	sigfillset(&newmask);
+	sigprocmask(SIG_BLOCK, &newmask, &oldmask);
+	if (!insert_after)
+	{
+		new_elem->fwd=ll->head; // now atomic
+		ll->head=new_elem; 	// now atomic
+	}
+	else
+	{
+		new_elem->fwd = insert_after->fwd; // now atomic
+		insert_after->fwd = new_elem;      // now atomic
+	}
+	sigprocmask(SIG_SETMASK, &newmask, &oldmask);
+}
 
 2c) Modify for safe "MTU" code
+For "MTU" need to implement a spinlock using an atomic test and set 
+
+TAS(int *addr) {
+	mask interrupts (this CPU)
+	lock memory bus (all CPUs)
+	invalidate other CPUs’ local caches on addr
+	if ((R= *addr)==0)
+	{
+		*addr=1
+	}
+	release memory bus
+	unmask interrupts
+	return R
+}
+
+// code-oriented approach
+
+void ll_insert(struct ll *ll,struct ll_elem *insert_after, struct ll_elem *new_elem)
+{
+	static int spin_lock = 0;
+	while (TAS(&spin_lock)!=0) 
+		;
+	if (!insert_after)
+	{
+		new_elem->fwd=ll->head; // now atomic
+		ll->head=new_elem; 	// now atomic
+	}
+	else
+	{
+		new_elem->fwd = insert_after->fwd; // now atomic
+		insert_after->fwd = new_elem;      // now atomic
+	}
+	spin_lock = 0;
+}

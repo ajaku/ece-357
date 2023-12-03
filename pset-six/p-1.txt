@@ -6,11 +6,11 @@ since this program has only a single thread and a single CPU, no external progra
 will interfere with the critical memory.
 
 1b) User-level, multi-threaded, single CPU
-Blocking signals and interrupts (ASK ABOUT DIFFERENCE BETWEEN THEM) won't be 
-effective. Although we avoid the problem of a signal handler within the original
-process (1a), multiple independent can share a memory region where values can be
-overwritten even though interrupts and signals are being blocked because those
-values don't necessarily need to be altered within the handler.
+Blocking signals and interrupts won't be effective. Although we avoid the problem 
+of a signal handler within the original process (1a), multiple independent can share 
+a memory region where values can be overwritten even though interrupts and signals 
+are being blocked because those values don't necessarily need to be altered within 
+the handler.
 
 1c) User-level, multi-threaded, multi-CPU
 Same reasoning as above, additionally though, disabling interrupts will only affect
