@@ -14,6 +14,5 @@ void spin_lock(struct spinlock *l) {
 }
 
 void spin_unlock(struct spinlock *l) {
-	// To unlock, set the lock to 1
-	l->lock = '1';
+	l->lock = 0;
 }

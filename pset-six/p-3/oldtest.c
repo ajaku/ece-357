@@ -45,17 +45,14 @@ int main(int argc, char *argv[]) {
 		if (pid[i] == 0) {
 			for (int j = 0; j < n_itrs; j++) {
 				struct spinlock *my_spin;
-				my_spin = (struct spinlock *)malloc(sizeof(struct spinlock));
-				my_spin->pid = 0;
-				my_spin->op_count = 0;
-				my_spin->lock = (char *)malloc(sizeof(char*));
-				*(my_spin->lock) = '0';
-				printf("Before lock: %c\n", *my_spin->lock);
+				//my_spin = (struct spinlock *)malloc(sizeof(struct spinlock));
+				my_spin = mmap(NULL, sizeof(*my_spin),
+						PROT_READ | PROT_WRITE,
+						MAP_SHARED | MAP_ANONYMOUS,
+						-1, 0);
 				spin_lock(my_spin);
-				printf("After lock: %c\n", *my_spin->lock);
 				*shared_int += 1;
 				spin_unlock(my_spin);
-				printf("After unlock: %c\n", *my_spin->lock);
 			}
 			exit(0);
 		} 

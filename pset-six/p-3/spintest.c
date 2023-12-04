@@ -19,15 +19,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	struct spinlock *my_spin;
-
+//	my_spin = mmap(NULL, sizeof(*my_spin), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
 	my_spin = (struct spinlock *)malloc(sizeof(struct spinlock));
-	// my_spin->lock = (char *)malloc(sizeof(char*));
-	my_spin->lock = '1';
-	printf("Before lock: %c\n", (my_spin->lock));
+	printf("Before lock: %d\n", (my_spin->lock));
 	spin_lock(my_spin);
-	printf("After lock: %c\n", (my_spin->lock));
+	printf("After lock: %d\n", (my_spin->lock));
 	spin_unlock(my_spin);
-	printf("After unlock: %c\n", (my_spin->lock));
-
+	printf("After unlock: %d\n", (my_spin->lock));
 	return 0;
 }
