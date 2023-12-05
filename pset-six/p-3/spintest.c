@@ -13,7 +13,7 @@
 // will spawn 8 child processes with shared memory regions
 // each process will iterate n times (command line arg)
 int main(int argc, char *argv[]) {
-	if (argc < 3) { 
+	if (argc != 4) { 
 		fprintf(stderr, "Incorrect number of arguments\n");
 		return 1;
 	}
@@ -46,11 +46,15 @@ int main(int argc, char *argv[]) {
 	int lock_flag;
 	struct spinlock *my_spin;
 	if (argv[3]) {
-		if ((lock_flag = strcmp(argv[3], "lock"))) {
-			fprintf(stderr, "Argument must either be empty or lock\n");
+		if (strcmp(argv[3], "lock") != 0 && strcmp(argv[3], "unlock") != 0) {
+			fprintf(stderr, "Argument must lock or unlock\n");
 			return 1;
 		}
-		//my_spin = (struct spinlock *)malloc(sizeof(struct spinlock));
+
+		if ((lock_flag = strcmp(argv[3], "unlock")) != 0) {
+			lock_flag = 1;
+		}
+
 		my_spin = mmap(NULL, sizeof(*my_spin),
 				PROT_READ | PROT_WRITE,
 				MAP_SHARED | MAP_ANONYMOUS,
@@ -63,7 +67,7 @@ int main(int argc, char *argv[]) {
 		if (pid[i] == -1) { perror("Fork failed"); return 1; }
 		if (pid[i] == 0) {
 			for (int j = 0; j < n_itrs; j++) {
-				if (!lock_flag) {
+				if (lock_flag) {
 					spin_lock(my_spin);
 					*shared_int += 1;
 					spin_unlock(my_spin);
