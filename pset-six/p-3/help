@@ -1,0 +1,15 @@
+Help()
+{
+   echo "Syntax: ./spintest.exe [nproc] [nitr] [lock]"
+   echo "[nproc] : number of processes (must be > 0)"
+   echo "[nitr] : number of iterations per process"
+   echo "[lock] : If lock, includes locking mechniams , otherwise no lock"
+}
+
+while getopts ":h" option; do
+	case $option in
+		h) #display Help
+			Help
+			exit;;
+	esac
+done
