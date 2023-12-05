@@ -1,0 +1,62 @@
+1-a) 
+cmpl	$nr_syscalls, %eax
+jae	syscall_badsys
+
+These two instructions are responsible for ensuring that the system call # matches
+the predefined system call #'s established within the Kernel's X86-32 bit API. The
+first instruction checks to see if the system call number stored within %eax was
+larger than the highest system call number, or less than zero. If either of these 
+conditions are true, this is deemed to be a bad system code and we jump to the 
+syscall_badsys code which stores the error code within the register.
+
+
+Without these instructions there would be no means to check whether the system 
+call number stored within %eax, therefore, an improper value can be placed in there
+without the flow of execution being halted, resulting in potential security flaws
+because you can now access items in that are outside of the designated area for
+system calls.
+
+1-b)
+What determines whether or not the %esp register gets fetched from TSS?
+
+The %esp register stores the stack pointer of the given exception/interrupt and 
+thus must be fetched from TSS whenever that value needs to be changed. However,
+should the process already be in the Supervisor mode, there is no need for the 
+kernel to fetch the %esp register because it is already valid within the kernel's
+stack.
+
+1-c)
+What happens if root fails to mount?
+
+As described in the notes, the root file system is mounted using a primitive version
+of the mount command. The man page for the mount command specifies that upon a failure
+to mount, an error code of 32 is returned. With some searching online I found similar
+reports: 
+
+https://askubuntu.com/questions/822887/boot-failed-failed-to-start-remount-root-and-kernel-file-systems
+
+However, I also found that the kernel could panic:
+
+https://askubuntu.com/questions/41930/kernel-panic-not-syncing-vfs-unable-to-mount-root-fs-on-unknown-block0-0
+
+Thus, I believe that the kernel will attempt to mount, if it fails, depending on
+the architecture you either have a kernel panic or enter some preset recovery mode
+to attempt to solve the issue yourself.
+
+
+1-d)
+Three scenarios where TIF_NEED_RESCHED flag is on and causes deferred return.
+
+Deferred return occurs usually because there is a "better" task to run (determined
+by scheduler) or a deliverable signal is pending.
+
+Situation 1: A task could have used up it's timeslice, causing the tick interrupt
+handler to perform a context switch and allow another task to perform it's duties.
+
+Situation 2: A task could have entered the sleep mode and upon waking up another 
+task is present with a higher priority, causing a deferred return as the higher
+priority task will run instead.
+
+Situation 3: Like in pset-6, question 3, a schedule that is performing a blocking 
+task can yield that time (sched_yield()), thus deferring to another task which can
+better utilize the run time in the moment.
