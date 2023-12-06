@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	int *shared_int = mmap(NULL, 4096,
+	int *shared_int = mmap(NULL, sizeof(int),
 	    PROT_READ | PROT_WRITE,
 	    MAP_SHARED | MAP_ANONYMOUS,
 	    -1, 0);
