@@ -9,18 +9,25 @@
 
 typedef unsigned long ulong;
 
+
 struct fifo {
     /* Elements of the fifo */
     int buf_idx;          // count of buffer
     int next_write, next_read;
     ulong buf[MYFIFO_BUFSIZE];
     
+    /* Create a waitstack */
+    
     /* Elements within waitlist */ 
     int write_waitlist_idx;     // count of waitlist
-    pid_t write_waitlist[NPROC]; 
+    // Creating two seperate lists because cannot
+    // dynamically allocate struct to store items
+    int write_waitlist_status[NPROC]; // 1 means waiting
+    pid_t write_waitlist_pid[NPROC]; 
 
     int read_waitlist_idx;     // count of waitlist
-    pid_t read_waitlist[NPROC]; 
+    int read_waitlist_status[NPROC];
+    pid_t read_waitlist_pid[NPROC]; 
 
     /* Mutex */
     struct spinlock my_spin;
