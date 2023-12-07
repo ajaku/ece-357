@@ -3,7 +3,6 @@
 
 struct spinlock {
 	int  pid;
-	int  op_count;
 	char lock;
 };
 
