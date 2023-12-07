@@ -17,35 +17,6 @@ void fifo_init(struct fifo *f) {
 	memset(f, 0, sizeof(*f));
 }
 
-void add_to_waitlist(int *elems, int (*status)[NPROC], pid_t (*pid)[NPROC]) {
-	int found = 0;
-
-	// See if PID is already on waitlist
-	for (int i = 0; i < *elems; i++) {
-		if (*pid[i] == getpid()) {
-			found = 1;
-			// Already waiting
-			if (*status[i]) {
-				break;
-			} else {
-				// "Put on waitlist"
-				*status[i] = 1;
-			}
-		}
-	}
-	if (!found) {
-		*(elems)++;	
-		*pid[*elems] = getpid();
-		*status[*elems] = 1; 
-	}
-}
-
-/*
-void remove_from_waitlist() {
-
-}
-*/
-
 void fifo_wr(struct fifo *f, ulong d) {
     sigset_t oldmask, newmask;
     sigemptyset(&oldmask);
@@ -53,6 +24,7 @@ void fifo_wr(struct fifo *f, ulong d) {
     	
     /* Wait until FIFO is not full */
     spin_lock(&f->my_spin);
+    //int first = 1;
     while (f->buf_idx >= MYFIFO_BUFSIZE) {
         // We want to add SIGUSR1 to be ignored (cond. to write)
 	// because we can't write at the moment
@@ -64,9 +36,8 @@ void fifo_wr(struct fifo *f, ulong d) {
 	// SIGUSR1 is terminating, we don't want it to terminate
 	signal(SIGUSR1, &empty_handler);
 
-	add_to_waitlist(&f->write_waitlist_idx, 
-			&f->write_waitlist_status,
-			&f->write_waitlist_pid);
+	f->write_waitlist_idx++;
+	f->write_waitlist_pid[f->write_waitlist_idx] = getpid();
 
         // Now unlock to avoid getting stuck
         spin_unlock(&f->my_spin);
@@ -86,14 +57,14 @@ void fifo_wr(struct fifo *f, ulong d) {
     f->next_write %= MYFIFO_BUFSIZE;
     f->buf_idx++;
 
-    /* Wakeup a reader and remove from waitlist */
-    for (int i = 0; i < f->read_waitlist_idx; i++) {
-	if (f->read_waitlist_status[i] == 1) {
-		f->read_waitlist_status[i] = 0;
-		kill(f->read_waitlist_pid[i], SIGUSR1);
-		break;
-	}
+    /* Wakeup all readers and remove from waitlist */
+    // Pop from end of array
+    for (int i = 0; i < f->read_waitlist_idx; i++) { 
+	    kill(f->read_waitlist_pid[f->read_waitlist_idx], SIGUSR1);
+            f->read_waitlist_pid[i] = 0;
     }
+    f->read_waitlist_idx = 0;
+
     /* Done sending signal */
     spin_unlock(&f->my_spin);
 }
@@ -106,6 +77,7 @@ ulong fifo_rd(struct fifo *f) {
     sigemptyset(&newmask);
 
     spin_lock(&f->my_spin);
+    //int first = 1;
     while (f->buf_idx <= 0) {
         // We want to add SIGUSR1 to be ignored (cond. to write)
 	// because we can't write at the moment
@@ -117,12 +89,9 @@ ulong fifo_rd(struct fifo *f) {
 	// Not sure here
 	signal(SIGUSR1, &empty_handler);
 
-        // Add to pid to waitlist (only want to add once)
-	// However, if PID was added before and wasn't selected
-	// don't re-add to waitlist again.
-	add_to_waitlist(&f->read_waitlist_idx, 
-			&f->read_waitlist_status,
-			&f->read_waitlist_pid);
+        // Add to pid to waitlist 
+	f->read_waitlist_idx++;
+	f->read_waitlist_pid[f->read_waitlist_idx] = getpid();
 
         // Now unlock to avoid getting stuck
         spin_unlock(&f->my_spin);
@@ -142,14 +111,12 @@ ulong fifo_rd(struct fifo *f) {
     f->next_read %= MYFIFO_BUFSIZE;
     f->buf_idx--;
 
-    /* Wakeup a writer and remove from waitlist */
-    for (int i = 0; i < f->write_waitlist_idx; i++) {
-	if (f->write_waitlist_status[i] == 1) {
-		f->write_waitlist_status[i] = 0;
-		kill(f->write_waitlist_pid[i], SIGUSR1);
-		break;
-	}
+    /* Wakeup writers and remove from waitlist */
+    for (int i = 0; i < f->write_waitlist_idx; i++) { 
+	    kill(f->write_waitlist_pid[f->write_waitlist_idx], SIGUSR1);
+            f->write_waitlist_pid[i] = 0;
     }
+    f->write_waitlist_idx = 0;
     /* Done sending signal */
 
     spin_unlock(&f->my_spin);
