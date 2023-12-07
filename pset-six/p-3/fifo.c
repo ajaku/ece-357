@@ -17,6 +17,35 @@ void fifo_init(struct fifo *f) {
 	memset(f, 0, sizeof(*f));
 }
 
+void add_to_waitlist(int *elems, int (*status)[NPROC], pid_t (*pid)[NPROC]) {
+	int found = 0;
+
+	// See if PID is already on waitlist
+	for (int i = 0; i < *elems; i++) {
+		if (*pid[i] == getpid()) {
+			found = 1;
+			// Already waiting
+			if (*status[i]) {
+				break;
+			} else {
+				// "Put on waitlist"
+				*status[i] = 1;
+			}
+		}
+	}
+	if (!found) {
+		*(elems)++;	
+		*pid[*elems] = getpid();
+		*status[*elems] = 1; 
+	}
+}
+
+/*
+void remove_from_waitlist() {
+
+}
+*/
+
 void fifo_wr(struct fifo *f, ulong d) {
     sigset_t oldmask, newmask;
     sigemptyset(&oldmask);
@@ -35,30 +64,9 @@ void fifo_wr(struct fifo *f, ulong d) {
 	// SIGUSR1 is terminating, we don't want it to terminate
 	signal(SIGUSR1, &empty_handler);
 
-        // Add to pid to waitlist (only want to add once)
-	// However, if PID was added before and wasn't selected
-	// don't re-add to waitlist again.
-	int found = 0;
-	// See if PID is already on waitlist
-	for (int i = 0; i < f->write_waitlist_idx; i++) {
-		if (f->write_waitlist_pid[i] == getpid()) {
-			found = 1;
-			// Already waiting
-			if (f->write_waitlist_status[i]) {
-				break;
-			} else {
-				// "Put on waitlist"
-				f->write_waitlist_status[i] = 1;
-			}
-		}
-	}
-
-	// Item was not already on waitlist
-	if (!found) {
-		f->write_waitlist_idx++;
-		f->write_waitlist_pid[f->write_waitlist_idx] = getpid();
-		f->write_waitlist_status[f->write_waitlist_idx] = 1; 
-	}
+	add_to_waitlist(&f->write_waitlist_idx, 
+			&f->write_waitlist_status,
+			&f->write_waitlist_pid);
 
         // Now unlock to avoid getting stuck
         spin_unlock(&f->my_spin);
@@ -66,11 +74,11 @@ void fifo_wr(struct fifo *f, ulong d) {
 	// Return to previous bitmask
 	sigsuspend(&oldmask);
 
-        // Restore mask (sigsuspend does it temporarily)
-        sigprocmask(SIG_SETMASK, &oldmask, NULL);
-
 	// Lock again
         spin_lock(&f->my_spin);
+
+        // Restore mask (sigsuspend does it temporarily)
+        sigprocmask(SIG_SETMASK, &oldmask, NULL);
     } 
     /* FIFO no longer full */
 
@@ -112,27 +120,9 @@ ulong fifo_rd(struct fifo *f) {
         // Add to pid to waitlist (only want to add once)
 	// However, if PID was added before and wasn't selected
 	// don't re-add to waitlist again.
-	int found = 0;
-	// See if PID is already on waitlist
-	for (int i = 0; i < f->read_waitlist_idx; i++) {
-		if (f->read_waitlist_pid[i] == getpid()) {
-			found = 1;
-			// Already waiting
-			if (f->read_waitlist_status[i]) {
-				break;
-			} else {
-				// "Put on waitlist"
-				f->read_waitlist_status[i] = 1;
-			}
-		}
-	}
-
-        // Add to pid to waitlist (only want to add once)
-	if (!found) {
-		f->read_waitlist_idx++;
-		f->read_waitlist_pid[f->read_waitlist_idx] = getpid();
-		f->read_waitlist_status[f->read_waitlist_idx] = 1; 
-	}
+	add_to_waitlist(&f->read_waitlist_idx, 
+			&f->read_waitlist_status,
+			&f->read_waitlist_pid);
 
         // Now unlock to avoid getting stuck
         spin_unlock(&f->my_spin);
@@ -140,11 +130,11 @@ ulong fifo_rd(struct fifo *f) {
 	// Return to previous bitmask
 	sigsuspend(&oldmask);
 
-        // Restore mask (sigsuspend does it temporarily)
-        sigprocmask(SIG_SETMASK, &oldmask, NULL);
-
 	// Lock again
         spin_lock(&f->my_spin);
+
+        // Restore mask (sigsuspend does it temporarily)
+        sigprocmask(SIG_SETMASK, &oldmask, NULL);
     }
 
     // Write into buffer
