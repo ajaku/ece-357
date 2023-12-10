@@ -4,8 +4,8 @@
 #include <sys/types.h>
 #include "spinlock.h"
 
-#define MYFIFO_BUFSIZE 1024
-#define NPROC          64
+#define MYFIFO_BUFSIZE 2
+#define NPROC          2
 
 typedef unsigned long ulong;
 
@@ -20,13 +20,9 @@ struct fifo {
     
     /* Elements within waitlist */ 
     int write_waitlist_idx;     // count of waitlist
-    // Creating two seperate lists because cannot
-    // dynamically allocate struct to store items
-    int write_waitlist_status[NPROC]; // 1 means waiting
     pid_t write_waitlist_pid[NPROC]; 
 
     int read_waitlist_idx;     // count of waitlist
-    int read_waitlist_status[NPROC];
     pid_t read_waitlist_pid[NPROC]; 
 
     /* Mutex */
@@ -52,5 +48,8 @@ ulong fifo_rd(struct fifo *f);
 * and until there are available words. (i.e. block until !empty)
 * Wake up a writer which was waiting for the FIFO to be non-full
 */
+
+void empty_handler(int sig);
+
 
 #endif /* __FIFO_H */
