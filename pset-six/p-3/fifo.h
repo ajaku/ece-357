@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include "spinlock.h"
 
-#define MYFIFO_BUFSIZE 1024
+#define MYFIFO_BUFSIZE 1024 
 #define NPROC          64
 
 typedef unsigned long ulong;
@@ -20,18 +20,17 @@ struct fifo {
     
     /* Elements within waitlist */ 
     int write_waitlist_idx;     // count of waitlist
-    // Creating two seperate lists because cannot
-    // dynamically allocate struct to store items
-    int write_waitlist_status[NPROC]; // 1 means waiting
     pid_t write_waitlist_pid[NPROC]; 
 
     int read_waitlist_idx;     // count of waitlist
-    int read_waitlist_status[NPROC];
     pid_t read_waitlist_pid[NPROC]; 
 
     /* Mutex */
     struct spinlock my_spin;
+    struct spinlock my_mutex;
 };
+
+void add_to_waitlist(int *elems, int (*status)[64], pid_t (*pid)[64]);
 
 void fifo_init(struct fifo *f);
 /* Initialize the shared memory FIFO *f including any required underlying
