@@ -4,8 +4,13 @@
 #include <sys/types.h>
 #include "spinlock.h"
 
+<<<<<<< HEAD
 #define MYFIFO_BUFSIZE 1024 
 #define NPROC          64
+=======
+#define MYFIFO_BUFSIZE 2
+#define NPROC          2
+>>>>>>> 8d4cf9a0800590b7bffc3517e987efecaecdf821
 
 typedef unsigned long ulong;
 
@@ -51,5 +56,8 @@ ulong fifo_rd(struct fifo *f);
 * and until there are available words. (i.e. block until !empty)
 * Wake up a writer which was waiting for the FIFO to be non-full
 */
+
+void empty_handler(int sig);
+
 
 #endif /* __FIFO_H */
